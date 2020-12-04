@@ -1,279 +1,248 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-#define BEGINNER 0
-#define INTERMEDIATE 1
-#define ADVANCEED 2
-#define MAXSIDE 25
-#define MAXMINES 99
-#define MOESIZE 526
+#define what_is(x) cout<<#x<<" = "<<x<<"\n";
 
-int side,mines;
 
-bool isValid(int row,int col){
-	return (row>=0)&&(row<side)&&(col>=0)&&(col<side);
+int LEVEL=0, SIZE=0, MINES=0, movesLeft=0;
+
+// First Move is always valid.
+bool firstMove = true;
+
+// To traverse 8 cells around a cell in a matrix.
+int x[8] = { -1, -1, -1,  0,  0,  1,  1,  1 };
+int y[8] = { -1,  0,  1, -1,  1, -1,  0,  1 };
+
+vector< vector<char> > realBoard, displayBoard; // DataStructure.
+
+// Functions Declarations.
+void printBoard( vector< vector<char> >&) ;
+bool isValid( int, int) ;
+void setSIZE();
+void initialize();
+void selectMove( int&, int& );
+void changeBoard( int, int );
+bool checkOutcome( int, int );
+void playGame();
+void endGame( bool );
+//_______________
+
+
+void printBoard(vector<vector<char>>& board){
+    cout << "    ";
+    for(int i=0; i<SIZE; ++i)
+    {
+        cout << i;
+        cout << (i<10?"  ":" ");
+    }
+    cout<<"\n";
+    
+    for(int i=0; i<SIZE; ++i){
+        cout << i ;
+        cout << (i<10?"  |":" |");
+
+        for(int j=0; j<SIZE; ++j){
+            cout << board[i][j];
+            cout << "  ";//(j<10?"  ":" ");
+        }
+        cout << "|\n";
+    }
+    cout << "\n";
 }
 
-bool isMine(int row,int col,char realboard[][MAXSIDE]){
-	if(realboard[row][col]=='*')
-		return true;
-	else
-		return false;
-	}
-	
-void makeMove(int *x,int *y){
-	cout<<"Enter Move ( row , column ) -> ";
-
-	scanf("%d %d", x, y);
-	return;
+bool isValid(int row, int col){
+    if(row<0 || col<0 || row>=SIZE || col>=SIZE){
+        return false;
+    }
+    else{
+        return true;
+    }
 }
 
-void printBoard(char myBoard[][MAXSIDE]){
-	int i,j;
-	cout<<"    ";
-	for(i=0;i<side;i++)
-	cout<<i<<" ";
-	cout<<endl;
-	for(int i=0;i<side;i++){
-		cout<<i<<"   ";
-		for(int j=0;j<side;j++){
-			cout<<myBoard[i][j]<<" ";
-		}
-		cout<<endl;
-	}
-	return;
+void setSIZE(){
+    switch(LEVEL){
+        case(0):{
+            SIZE = 5;
+            MINES = 10;
+            break;
+        }
+        case(1):{
+            SIZE = 10;
+            MINES = 25;
+            break;
+        }
+        case(2):{
+            SIZE = 15;
+            MINES = 35;
+            break;
+        }
+        default:{
+            SIZE = 5;
+            MINES = 8;
+            break;
+        }
+    }
+
+    movesLeft = SIZE*SIZE - MINES;
+
+}
+void initialize(){
+    cout << "Choose LEVEL: \n";
+    cout << "0, 1 or 2 => ";
+    cin >> LEVEL;
+
+    setSIZE();
+
+    realBoard = vector<vector<char>>(SIZE,vector<char>(SIZE,'-'));
+    displayBoard = vector<vector<char>>(SIZE,vector<char>(SIZE,'-'));
+
+    int mines = MINES;
+    srand(time(NULL));
+    while(mines){
+        int random = rand()%(SIZE*SIZE);
+        int row = random/SIZE;
+        int col = random%SIZE;
+        if(realBoard[row][col] == '-'){
+            realBoard[row][col] = '*';
+            --mines;            
+        }
+    }
+
 }
 
-int countAdjacentMines(int row,int col,int mine[][2],char realBoard[][MAXSIDE]){
-	int i,count=0;
-	if(isValid(row-1,col)==true){
-		if(isMine(row-1,col,realBoard))
-			count++;
-	}
-	
-	if(isValid(row+1,col)==true){
-		if(isMine(row+1,col,realBoard))
-			count++;
-	}
-	
-	if(isValid(row,col+1)==true){
-		if(isMine(row,col+1,realBoard))
-			count++;
-	}
-	
-	if(isValid(row,col-1)==true){
-		if(isMine(row,col-1,realBoard))
-			count++;
-	}
-	
-	if(isValid(row-1,col+1)==true){
-		if(isMine(row-1,col+1,realBoard))
-			count++;
-	}
-	
-	if(isValid(row-1,col-1)==true){
-		if(isMine(row-1,col-1,realBoard))
-			count++;
-	}
-	
-	if(isValid(row+1,col+1)==true){
-		if(isMine(row+1,col+1,realBoard))
-			count++;
-	}
-	
-	if(isValid(row+1,col-1)==true){
-		if(isMine(row+1,col-1,realBoard))
-			count++;
-	}
-	
-	return count;
+void selectMove(int& row, int& col){
+    int maxAttemp = 15;
+    while(--maxAttemp)
+    {
+        int tRow, tCol;
+        cout << "Enter Cell Row & Column : \n";
+        cin >> tRow;
+        cin >> tCol;
+
+        if(!isValid(tRow,tCol)){
+            cout << row << " " << col << "\n";
+            cout << "Enter valid cells.\n";}
+        else{
+            row = tRow;
+            col = tCol;
+            break; 
+        }
+
+    }
 }
-int ch=1;
-bool playUntil(char myBoard[][MAXSIDE],char realBoard[][MAXSIDE],int mine[][2],int row,int col,int *movesleft){
-	
-	if(myBoard[row][col]!='-')
-	return false;
-	int i,j;
-	if(realBoard[row][col]=='*'){
-		if(!ch)
-		return false;
-		ch=0;
-		myBoard[row][col]='*';
-		for(i=0;i<mines;i++)
-			myBoard[mine[i][0]][mine[i][1]]='*';
-			printBoard(myBoard);
-			cout<<"\nYou Lost!\n";
-			return true;		
-	}
-	
-	else{
-		int count = countAdjacentMines(row,col,mine,realBoard);
-		(*movesleft)--;
-		myBoard[row][col] = count + '0';
-		if(!count){	
-				
-				
-				if (isValid (row-1, col) == true) 
-            { 
-                   if (isMine (row-1, col, realBoard) == false) 
-                   playUntil(myBoard, realBoard, mine, row-1, col, movesleft); 
+
+void changeBoard(int row, int col){
+    bool minePlaced = false;
+    if(isValid(row,col)){
+        for(int i=0; i<SIZE; ++i){
+            for(int j=0; j<SIZE; ++j){
+                if(realBoard[i][j] == '-')
+                { realBoard[i][j] = '*'; 
+                  realBoard[row][col] = '-';
+                  minePlaced = true;
+                break;
+                }
             }
-   
-            if (isValid (row+1, col) == true) 
-            { 
-                   if (isMine (row+1, col, realBoard) == false) 
-                    playUntil(myBoard, realBoard, mine, row+1, col, movesleft); 
-            } 
-   
-            if (isValid (row, col+1) == true) 
-            { 
-                if (isMine (row, col+1, realBoard) == false) 
-                    playUntil(myBoard, realBoard, mine, row, col+1, movesleft); 
-            } 
-  
-            if (isValid (row, col-1) == true) 
-            { 
-                   if (isMine (row, col-1, realBoard) == false) 
-                    playUntil(myBoard, realBoard, mine, row, col-1, movesleft); 
-            } 
-  
-           
-            if (isValid (row-1, col+1) == true) 
-            { 
-                if (isMine (row-1, col+1, realBoard) == false) 
-                    playUntil(myBoard, realBoard, mine, row-1, col+1, movesleft); 
-            } 
-  
-            if (isValid (row-1, col-1) == true) 
-            { 
-                 if (isMine (row-1, col-1, realBoard) == false) 
-                    playUntil(myBoard, realBoard, mine, row-1, col-1, movesleft); 
-            } 
-  
-            
-            if (isValid (row+1, col+1) == true) 
-            { 
-                 if (isMine (row+1, col+1, realBoard) == false) 
-                    playUntil(myBoard, realBoard, mine, row+1, col+1, movesleft); 
-            } 
-  
-            
-            if (isValid (row+1, col-1) == true) 
-            { 
-                if (isMine (row+1, col-1, realBoard) == false) 
-                    playUntil(myBoard, realBoard, mine, row+1, col-1, movesleft); 
-            } 
-        } 
-  
-        return (false);
-	}
+            if(minePlaced)
+            break;
+        }
+    }
+
+    for(int i=0; i<SIZE; ++i){
+        for(int j=0; j<SIZE; ++j){
+            if(realBoard[i][j] == '*')
+                { continue; }
+            int count = 0;
+            for(int k=0; k<8; ++k){
+                if(isValid(i+x[k], j+y[k]) && realBoard[i+x[k]][j+y[k]] == '*')
+                {
+                    count++;
+                }
+            }
+            realBoard[i][j] = count+'0';
+        }
+    }
 }
 
-void placeMines(int mine[][2],char realBoard[][MAXSIDE]){
-	bool mark[MAXSIDE*MAXSIDE];
-	memset(mark,false,sizeof(mark));
-	
-	for(int i=0;i<mines;){
-		int random=rand()%(side*side);
-		int x=random/side;
-		int y=random%side;
-		if(mark[random]==false){
-			mine[i][0]=x;
-			mine[i][1]=y;
-			realBoard[x][y]='*';
-			mark[random]=true;
-			i++;
-		}
-	}
-	return;
-}
+bool checkOutcome(int row,int col){
+    if(realBoard[row][col] == '*')
+    {
+        if(firstMove){
+            changeBoard(row, col);
+            displayBoard[row][col] = realBoard[row][col];
+            firstMove = false;
+        }
+        else{
+            return true;
+        }
+    }
+    else{
+        if(firstMove){
+            changeBoard(-1, -1);
+            firstMove = false;
+        }
+        displayBoard[row][col] = realBoard[row][col];
+        if(displayBoard[row][col] == '0'){
+            stack<pair<int,int>> s;
+            s.push({row,col});
+            while(!s.empty()){
+                auto it = s.top();
+                int r = it.first, c = it.second;
+                s.pop();
+            for(int k=0; k<8; ++k){
+                if(isValid(r+x[k], c+y[k]))
+                {
+                    char temp = realBoard[r+x[k]][c+y[k]];
+                    if(temp == '0' && displayBoard[r+x[k]][c+y[k]] == '-')
+                    { s.push({r+x[k],c+y[k]}); }
+                    
+                    displayBoard[r+x[k]][c+y[k]] = temp;
+                    --movesLeft;
+                }
+            }
+            }
+        }
+    }
 
-void initialise(char realBoard[][MAXSIDE],char myBoard[][MAXSIDE]){
-	srand(time(NULL));
-	for(int i=0;i<side;i++){
-		for(int j=0;j<side;j++){
-			myBoard[i][j]=realBoard[i][j]='-';
-		}
-	}
-	return;
-}
-
-void cheat(char realBoard[][MAXSIDE]){
-	cout<<"The Mine Locatin are-\n";
-	printBoard(realBoard);
-	return;
-	}
-
-void replaceMine(int row,int col,char realBoard[][MAXSIDE]){
-	for(int i=0;i<side;i++){
-		for(int j=0;j<side;j++){
-			if(realBoard[i][j]!='*'){
-				realBoard[i][j]='*';
-				realBoard[row][col]='-';
-				/* change mine index in mine[] for replaced mine */
-				return;
-			}
-		}
-	}
-	return;
-}
-
-void playMineSweeper(){
-	bool gameover=false;
-	char myBoard[MAXSIDE][MAXSIDE],realBoard[MAXSIDE][MAXSIDE];
-	int movesleft=side*side-mines,x,y;
-	int mine[MAXMINES][2];
-	
-	initialise(realBoard,myBoard);
-	
-	placeMines(mine,realBoard);
-	
-	int currentIndex=0;
-	while(!gameover){
-		cout<<"Current Status : \n";
-		printBoard(myBoard);
-		makeMove(&x,&y);
-		if(currentIndex==0){
-			if(isMine(x,y,realBoard))
-			replaceMine(x,y,realBoard);
-		}
-		currentIndex++;
-		gameover=playUntil(myBoard,realBoard,mine,x,y,&movesleft);
-		ch=1;
-		if((gameover==false)&&(movesleft==0)){
-			cout<<"\nYou Won!!\n";
-			gameover=true;
-		}
-	}
-	return;
-}
-
-void chooseDifficulty(){
-	int level;
-	cout<<"Enter Difficulty Level\n 0 , 1 or 2 => ";
-	cin>>level;
-	if(level==0)
-	{side=9;
-	mines=10;
-	}
-	if(level==1)
-	{side=16;
-	mines=40;
-	}
-	if(level==2)
-	{side=24;
-	mines=99;
-	}
-	return;
+    return false;
 }
 
 
+void playGame(){
+    int row ,col ;
+    while(movesLeft--){
+        printBoard(displayBoard);
+        row = col = -1;
+        selectMove(row,col);
 
+        bool isOver = checkOutcome(row,col);
+        if(isOver){
+            endGame(false);
+            return;
+        }
+
+    }
+
+    endGame(true);
+}
+
+void endGame(bool won){
+    if(won){
+        cout << "Congrats You Won!!\n";
+    }
+    else{
+        cout << "You Lost!\n";
+        printBoard(realBoard);
+        cout << "Sometimes Luck is not with us,\n but that wasn't the case today.\n";
+    }
+    
+}
 
 int main(){
-	
-	chooseDifficulty();
-	playMineSweeper();
-	
-	return 0;
+   
+    initialize();
+
+    playGame();
+
+   return 0;
 }
